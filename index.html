@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOEIC Part 5 練習問題</title>
+<style>
+  :root {
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --gray: #6b7280;
+    --gray-light: #f9fafb;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-muted: #6b7280;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+    background: #f3f4f6;
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    background: var(--blue);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .score-badge {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .timer {
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-family: monospace;
+    font-weight: 600;
+  }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-wrap {
+    background: #dbeafe;
+    height: 6px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--blue);
+    transition: width 0.3s ease;
+  }
+
+  /* ===== MAIN ===== */
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+
+  /* ===== HOME SCREEN ===== */
+  #home-screen {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  #home-screen h2 { font-size: 1.8rem; margin-bottom: 8px; color: var(--blue); }
+  #home-screen p { color: var(--text-muted); margin-bottom: 32px; }
+
+  .mode-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .mode-card {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .mode-card:hover { border-color: var(--blue); box-shadow: 0 4px 12px rgba(37,99,235,0.15); }
+  .mode-card.selected { border-color: var(--blue); background: var(--blue-light); }
+  .mode-card .icon { font-size: 2rem; margin-bottom: 8px; }
+  .mode-card h3 { font-size: 1rem; margin-bottom: 4px; }
+  .mode-card p { font-size: 0.8rem; color: var(--text-muted); }
+
+  .range-select {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .range-select h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; color: var(--text-muted); }
+  .range-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .range-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: all 0.15s;
+  }
+  .range-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .range-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+
+  .btn-start {
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 48px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn-start:hover { background: #1d4ed8; }
+
+  /* ===== QUESTION SCREEN ===== */
+  #question-screen { display: none; }
+
+  .q-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .q-num {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .q-type {
+    background: #dbeafe;
+    color: var(--blue);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .question-card {
+    background: white;
+    border-radius: 14px;
+    padding: 28px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+  }
+  .question-text {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    margin-bottom: 24px;
+    word-break: break-word;
+  }
+  .question-text em {
+    background: #fef9c3;
+    font-style: normal;
+    padding: 0 4px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  .choice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.95rem;
+  }
+  .choice:hover:not(.disabled) { border-color: var(--blue); background: var(--blue-light); }
+  .choice-letter {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gray-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .choice.correct { border-color: var(--green); background: var(--green-light); }
+  .choice.correct .choice-letter { background: var(--green); color: white; }
+  .choice.wrong { border-color: var(--red); background: var(--red-light); }
+  .choice.wrong .choice-letter { background: var(--red); color: white; }
+  .choice.disabled { cursor: default; }
+  .choice.highlight { border-color: var(--green); }
+
+  /* ===== EXPLANATION ===== */
+  .explanation {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    display: none;
+    animation: fadeIn 0.25s ease;
+  }
+  .explanation.show { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .result-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .result-badge.correct { background: var(--green-light); color: var(--green); }
+  .result-badge.wrong { background: var(--red-light); color: var(--red); }
+
+  .exp-section { margin-bottom: 12px; }
+  .exp-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .exp-body {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .translation-box {
+    background: var(--gray-light);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    color: #374151;
+    line-height: 1.6;
+  }
+
+  /* ===== NAV BUTTONS ===== */
+  .nav-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-secondary { background: white; color: var(--text); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { background: var(--gray-light); }
+  .btn-danger { background: #fee2e2; color: var(--red); }
+  .btn-danger:hover { background: #fecaca; }
+
+  /* ===== RESULT SCREEN ===== */
+  #result-screen { display: none; text-align: center; padding: 20px 0; }
+  .result-card {
+    background: white;
+    border-radius: 16px;
+    padding: 32px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+  }
+  .score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(var(--blue) var(--pct, 0%), #e5e7eb 0%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    position: relative;
+  }
+  .score-circle::before {
+    content: '';
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+  }
+  .score-number {
+    position: relative;
+    z-index: 1;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--blue);
+  }
+  .result-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .stat-box {
+    background: var(--gray-light);
+    border-radius: 10px;
+    padding: 12px 8px;
+  }
+  .stat-box .stat-val { font-size: 1.4rem; font-weight: 700; }
+  .stat-box .stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+  .stat-box.correct .stat-val { color: var(--green); }
+  .stat-box.wrong .stat-val { color: var(--red); }
+
+  .review-list { text-align: left; margin-top: 24px; }
+  .review-list h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; }
+  .review-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--red-light);
+    border-left: 3px solid var(--red);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .review-item:hover { opacity: 0.8; }
+  .review-item .q-label { font-size: 0.8rem; font-weight: 700; color: var(--red); flex-shrink: 0; }
+  .review-item .q-preview { font-size: 0.82rem; color: #374151; line-height: 1.5; }
+
+  /* ===== QUESTION NAV DOT ===== */
+  .q-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+    background: white;
+    padding: 12px 16px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .q-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-muted);
+  }
+  .q-dot:hover { border-color: var(--blue); color: var(--blue); }
+  .q-dot.current { border-color: var(--blue); background: var(--blue); color: white; }
+  .q-dot.answered-correct { background: var(--green); border-color: var(--green); color: white; }
+  .q-dot.answered-wrong { background: var(--red); border-color: var(--red); color: white; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 500px) {
+    .question-text { font-size: 0.95rem; }
+    header h1 { font-size: 0.95rem; }
+    .question-card { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>TOEIC Part 5 練習問題</h1>
+  <div class="header-right">
+    <span class="score-badge" id="header-score" style="display:none">✓ 0 / 0</span>
+    <span class="timer" id="timer" style="display:none">00:00</span>
+  </div>
+</header>
+<div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+
+<main>
+
+<!-- ===== HOME ===== -->
+<div id="home-screen">
+  <h2>TOEIC Part 5</h2>
+  <p>品詞・語彙・文法を集中トレーニング</p>
+
+  <div class="mode-cards">
+    <div class="mode-card selected" data-mode="all" onclick="selectMode(this,'all')">
+      <div class="icon">📝</div>
+      <h3>通常モード</h3>
+      <p>選択した問題範囲を順番に解く</p>
+    </div>
+    <div class="mode-card" data-mode="shuffle" onclick="selectMode(this,'shuffle')">
+      <div class="icon">🔀</div>
+      <h3>シャッフルモード</h3>
+      <p>問題をランダムに出題</p>
+    </div>
+    <div class="mode-card" data-mode="review" onclick="selectMode(this,'review')">
+      <div class="icon">🔁</div>
+      <h3>復習モード</h3>
+      <p>間違えた問題だけ再挑戦</p>
+    </div>
+  </div>
+
+  <div class="range-select">
+    <h3>問題範囲を選択</h3>
+    <div class="range-buttons">
+      <button class="range-btn active" data-range="all" onclick="selectRange(this,'all')">全100問</button>
+      <button class="range-btn" data-range="1-10" onclick="selectRange(this,'1-10')">001-010</button>
+      <button class="range-btn" data-range="11-20" onclick="selectRange(this,'11-20')">011-020</button>
+      <button class="range-btn" data-range="21-30" onclick="selectRange(this,'21-30')">021-030</button>
+      <button class="range-btn" data-range="31-40" onclick="selectRange(this,'31-40')">031-040</button>
+      <button class="range-btn" data-range="41-50" onclick="selectRange(this,'41-50')">041-050</button>
+      <button class="range-btn" data-range="51-60" onclick="selectRange(this,'51-60')">051-060</button>
+      <button class="range-btn" data-range="61-70" onclick="selectRange(this,'61-70')">061-070</button>
+      <button class="range-btn" data-range="71-80" onclick="selectRange(this,'71-80')">071-080</button>
+      <button class="range-btn" data-range="81-90" onclick="selectRange(this,'81-90')">081-090</button>
+      <button class="range-btn" data-range="91-100" onclick="selectRange(this,'91-100')">091-100</button>
+    </div>
+  </div>
+
+  <button class="btn-start" onclick="startQuiz()">スタート</button>
+
+  <div id="prev-result" style="margin-top:24px; display:none;">
+    <p style="color:var(--text-muted); font-size:0.85rem;">前回の結果：<span id="prev-result-text"></span></p>
+  </div>
+</div>
+
+<!-- ===== QUESTION ===== -->
+<div id="question-screen">
+  <div class="q-nav" id="q-nav"></div>
+
+  <div class="q-meta">
+    <span class="q-num" id="q-num">問題 1 / 10</span>
+    <span class="q-type" id="q-type"></span>
+  </div>
+
+  <div class="question-card">
+    <div class="question-text" id="question-text"></div>
+    <div class="choices" id="choices"></div>
+  </div>
+
+  <div class="explanation" id="explanation">
+    <div id="result-badge"></div>
+    <div class="exp-section">
+      <div class="exp-label">解説</div>
+      <div class="exp-body" id="exp-body"></div>
+    </div>
+    <div class="exp-section">
+      <div class="exp-label">和訳</div>
+      <div class="translation-box" id="exp-translation"></div>
+    </div>
+  </div>
+
+  <div class="nav-buttons">
+    <button class="btn btn-secondary" id="btn-prev" onclick="prevQuestion()">← 前へ</button>
+    <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()" style="display:none">次へ →</button>
+    <button class="btn btn-danger" onclick="endQuiz()">終了</button>
+  </div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div id="result-screen">
+  <div class="result-card">
+    <h2 style="margin-bottom:20px; font-size:1.3rem;">結果</h2>
+    <div class="score-circle" id="score-circle">
+      <span class="score-number" id="score-pct">0%</span>
+    </div>
+    <p id="score-msg" style="margin-bottom:4px; font-size:1rem; font-weight:600;"></p>
+    <p style="color:var(--text-muted); font-size:0.85rem;" id="time-elapsed"></p>
+    <div class="result-stats">
+      <div class="stat-box correct">
+        <div class="stat-val" id="stat-correct">0</div>
+        <div class="stat-label">正解</div>
+      </div>
+      <div class="stat-box wrong">
+        <div class="stat-val" id="stat-wrong">0</div>
+        <div class="stat-label">不正解</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-skip">0</div>
+        <div class="stat-label">未回答</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="review-list" id="review-list"></div>
+
+  <div class="nav-buttons" style="justify-content:center; margin-top:16px;">
+    <button class="btn btn-primary" onclick="reviewWrong()" id="btn-review-wrong">間違えた問題を復習</button>
+    <button class="btn btn-secondary" onclick="goHome()">ホームへ戻る</button>
+  </div>
+</div>
+
+</main>
+
+<script>
+const QUESTIONS = [
+  {id:1,q:"Ms. Ortega's development team contributed ——– to the successful launch of the newest mobile application.",options:["automatically","substantially","sharply","accordingly"],answer:1,type:"語彙問題",explanation:"空所の副詞は動詞contributedを修飾。contributed substantially（かなり貢献した）が自然なコロケーション。",translation:"Ortegaさんの開発チームは、最新のモバイルアプリケーションの発売にかなり貢献しました。"},
+  {id:2,q:"In order to meet production targets, inspection equipment that breaks down easily should be checked on a ——– basis.",options:["regular","regularly","regularize","regularity"],answer:0,type:"品詞問題",explanation:"冠詞aの後に名詞basisが続くため、形容詞regularが必要。【冠詞+形容詞+名詞】の公式に従う。",translation:"生産目標を達成するために、故障しやすい検査装置は定期的に点検してもらったほうがいい。"},
+  {id:3,q:"——– you experience any problems with the building's equipment, you should contact the property manager.",options:["Because of","In case of","Immediately","If"],answer:3,type:"接続詞・前置詞問題",explanation:"空所後の『you experience』は主語+動詞の形式。接続詞が必要であり、『If』が適切。",translation:"建物の設備に何らかの不具合があった場合、不動産管理人に連絡してください。"},
+  {id:4,q:"Employees must park in the ——– parking lot until the renovation of the company building is completed.",options:["frequent","generous","complicated","temporary"],answer:3,type:"語彙問題",explanation:"形容詞とparking lot（駐車場）のコロケーション。temporary parking lot（臨時駐車場）が自然。",translation:"社屋の改装工事が完了するまで、社員は臨時駐車場に停めなければならない。"},
+  {id:5,q:"Although the assembly machine has been used for more than 20 years, it is still ——–.",options:["annual","experienced","operational","previous"],answer:2,type:"語彙問題",explanation:"第2文型（S+V+C）において、主語『the assembly machine』の状態を表す補語が必要。『operational』が適切。",translation:"その組立機械は20年以上使われているけれども、いまだに使用できる。"},
+  {id:6,q:"Medical ——– are supposed to investigate the characteristics and effects of newly developed materials.",options:["expert","expertise","experts","expertly"],answer:2,type:"品詞問題",explanation:"形容詞Medicalの後に主語が必要。後続の『are』から複数形『experts』が適切。",translation:"医学の専門家は、新しく開発された材料の特徴と効果について調べることになっている。"},
+  {id:7,q:"Darwin Construction, renowned for its ——– designs, has won the bid for the Dalton City Library.",options:["innovation","innovate","innovatively","innovative"],answer:3,type:"品詞問題",explanation:"所有格『its』と名詞『designs』の間に形容詞『innovative』が必要。【所有格+形容詞+名詞】の構造。",translation:"Darwin建設は革新的な設計で有名であるが、ダルトン市の図書館プロジェクトの入札を獲得した。"},
+  {id:8,q:"Please make sure that ——– address is correct in the designated section of the order form.",options:["yours","yourself","your","you"],answer:2,type:"代名詞問題",explanation:"名詞『address』を修飾する所有格『your』が必要。【所有格+名詞】の構造。",translation:"注文用紙の指定の箇所に住所を正しく記入してください。"},
+  {id:9,q:"Mr. Thompson was ——– as the marketing director after a successful market development in Asia.",options:["appointing","appointed","appoint","appoints"],answer:1,type:"動詞問題",explanation:"主語『Mr. Thompson』が『marketing director』に任命される関係。受動態『was appointed』が適切。",translation:"Thompsonさんは、アジアでの市場開拓に成功した後、マーケティング部長に任命されました。"},
+  {id:10,q:"The Irwin City Tourist Information Office is ——– located in the center of the city.",options:["particularly","unfortunately","absolutely","conveniently"],answer:3,type:"語彙問題",explanation:"副詞『conveniently』は『located』を修飾。『conveniently located』（便利なところに位置して）が自然なコロケーション。",translation:"Irwin市の観光案内所は市の中心部に便利な場所にあります。"},
+  {id:11,q:"Professional and amateur photographers ——– can participate in the annual photography contest, which takes place in October.",options:["alike","even","quite","enough"],answer:0,type:"語彙問題",explanation:"「photographers alike」でプロもアマチュアも同様にという意味になる。alikeは名詞の後ろに置いて「同様に」を表す。",translation:"プロとアマチュアのカメラマンのどちらも、10月に開催される年次写真コンテストに参加できます。"},
+  {id:12,q:"——– a recent government survey, annual income per household last year was about the same as it was five years ago.",options:["Additionally","Although","According to","As soon as"],answer:2,type:"語彙問題",explanation:"「According to a recent government survey」で「最近の政府調査によると」の意味。後続に名詞句が来る前置詞表現。",translation:"最近の政府の調査によると、昨年の世帯あたりの年間収入は5年前とほぼ同じでした。"},
+  {id:13,q:"Clarel Bookstore, located in the northern part of Wallaby City, will ——– host book signings for its members.",options:["occasions","occasion","occasionally","occasional"],answer:2,type:"品詞問題",explanation:"助動詞willと動詞hostの間には副詞が必要。occasionally（時々）が適切。",translation:"Wallaby市の北部に位置するClarel Bookstoreは、会員のためのサイン会を時折開催する予定です。"},
+  {id:14,q:"A list of full-time job ——– at Canterbury Technology will be posted on the website tomorrow afternoon.",options:["open","openings","openly","opened"],answer:1,type:"品詞問題",explanation:"job ——–の複合名詞。job openings（求人）が自然。複数形で正解。",translation:"Canterbury Technologyのフルタイムの求人リストは、明日の午後にウェブサイトに掲載される予定です。"},
+  {id:15,q:"The product developed by Orange Solutions was ——– in terms of design than that of Roseville System, but the price was about the same.",options:["sophisticated","most sophisticated","more sophisticated","sophisticate"],answer:2,type:"比較問題",explanation:"thanがあるので比較級が必要。more sophisticatedが正解。",translation:"Orange Solutions社が開発した製品は、デザインの点でRoseville System社の製品よりも洗練されていたが、価格はほぼ同じでした。"},
+  {id:16,q:"——– the tourist season begins, Trattoria Porte will extend its hours of operation until 23:00.",options:["Afterward","Prior to","Once","During"],answer:2,type:"接続詞問題",explanation:"空所後にthe tourist season beginsという主語+動詞があるので接続詞が必要。Once（いったん〜すると）が適切。",translation:"観光シーズンが始まると、Trattoria Porteは営業時間を23時まで延長する予定です。"},
+  {id:17,q:"——– the inclement weather, many residents came to the concert venue to listen to the performance by the renowned pianist.",options:["Despite","Although","Nevertheless","Whenever"],answer:0,type:"接続詞・前置詞問題",explanation:"空所後にthe inclement weatherという名詞句があるので前置詞が必要。Despite（〜にもかかわらず）が適切。",translation:"悪天候にもかかわらず、多くの住民が有名なピアニストの演奏を聴きにコンサート会場に来ました。"},
+  {id:18,q:"Graden Consulting attempted to recruit a senior data analyst internally, but ——– employees met the job requirements.",options:["both","few","most","a lot of"],answer:1,type:"語彙問題",explanation:"「but」の後ろでほとんどの社員が条件を満たさなかったという意味になるfew（ほとんど〜ない）が適切。",translation:"Graden Consultingは社内でシニアデータアナリストを採用しようとしたが、職務要件を満たす社員はほとんどいなかった。"},
+  {id:19,q:"Due to poor sales, plans to close several branches in the Kansai region ——–.",options:["considers","have been considering","was considered","are being considered"],answer:3,type:"動詞問題",explanation:"主語がplansで複数。受動態の現在進行形are being consideredが適切。",translation:"売上不振のため、関西地域のいくつかの支店を閉鎖する計画が検討されています。"},
+  {id:20,q:"With the implementation of a state-of-the-art customer management system, Taylor Bay Hotel has ——–improved customer satisfaction.",options:["substantial","substantiate","substantiating","substantially"],answer:3,type:"品詞問題",explanation:"has ——– improvedの構造で、過去分詞improvedを修飾する副詞が必要。substantially（大幅に）が適切。",translation:"最新の顧客管理システムを導入することで、Taylor Bay Hotelは顧客満足度を大幅に向上させました。"},
+  {id:21,q:"Streamlining the textile production process has resulted in an ——– 20 percent increase in productivity.",options:["apparently","approximately","affordably","efficiently"],answer:1,type:"語彙問題",explanation:"数字の前を修飾する副詞。approximately（約）が数値を修飾する自然な表現。",translation:"繊維製品の生産工程の合理化によって、生産性を約２０％向上させることに成功した。"},
+  {id:22,q:"Mr. Hunter, who joined the company only three months ago, was able to find the cause of the machine's breakdown ——–.",options:["his own","him","he","himself"],answer:3,type:"代名詞問題",explanation:"文が完結した後に空所がある。強調の再帰代名詞himself（彼自身で）が文末に置かれる。",translation:"ハンターさんは、入社してわずか3か月であるが、彼自身でその機械の故障の原因を見つけることができた。"},
+  {id:23,q:"Garbage collection in the Carson area is twice a week, on Mondays and Thursdays, unless there is a ——– reason.",options:["specialize","specialist","specially","special"],answer:3,type:"品詞問題",explanation:"a ——– reasonの構造で、名詞reasonを修飾する形容詞special（特別な）が必要。",translation:"Carson地区のゴミ回収は、特別な理由がない限り週に2回の月曜日と木曜日である。"},
+  {id:24,q:"Those who book a room through the San Remo Inn website will receive ——– breakfast.",options:["complimentary","reluctant","prominent","renewable"],answer:0,type:"語彙問題",explanation:"complimentary breakfast（無料の朝食）はTOEICでよく出る表現。ホテルサービスの文脈に合う。",translation:"San Remo Innのウェブサイトから宿泊を予約した方は無料の朝食が提供されます。"},
+  {id:25,q:"Visitors must carry their entry passes at all times when ——– the factory's facilities.",options:["tour","toured","will tour","touring"],answer:3,type:"動詞問題",explanation:"when ——– の後ろに目的語がある。when touring（見学している間）の分詞構文。",translation:"工場内の施設を見学する際、訪問者は入館証を常に携帯しなければならない。"},
+  {id:26,q:"Delmar Auto Industries has signed a contract to purchase electronic components from Stellar Corporation ——– after lengthy negotiations.",options:["periodical","periodically","period","periodic"],answer:1,type:"品詞問題",explanation:"動詞purchaseを修飾する副詞periodically（定期的に）が必要。",translation:"Delmar Auto Industries社は長期にわたる交渉の末にStellar Corporation社から電子部品を定期的に購入する契約を結んだ。"},
+  {id:27,q:"To enter Lipton National Park on weekends, tickets must be reserved online in ——–.",options:["short","person","progress","advance"],answer:3,type:"語彙問題",explanation:"in advance（事前に）は予約の文脈で頻出表現。in person（直接）、in progress（進行中）と区別する。",translation:"週末にLipton National Parkへ入場するためには、事前にチケットをオンラインで予約しておかなければならない。"},
+  {id:28,q:"Thompson Manufacturing is known in the agricultural machinery industry as a ——– manufacturer of machine parts.",options:["reliability","reliable","rely","reliably"],answer:1,type:"品詞問題",explanation:"a ——– manufacturerの構造で名詞manufacturerを修飾する形容詞reliable（信頼できる）が必要。",translation:"Thompson Manufacturing社は信頼できる機械部品の製造業者として農業機械業界で知られている。"},
+  {id:29,q:"Since the main roads in the center of the city are congested during the summer festival, people ——– to use public transportation.",options:["encouraged","are encouraged","encourage","have encouraged"],answer:1,type:"動詞問題",explanation:"主語peopleが公共交通機関の利用を勧められる側なので受動態are encouragedが必要。",translation:"サマーフェスティバルの期間中、市の中心部の幹線道路は混雑するので公共交通機関の利用が推奨されている。"},
+  {id:30,q:"Heavy snowfall since last night has ——– significant delays in the arrival of flights from Sapporo.",options:["led","resulted","included","caused"],answer:3,type:"語彙問題",explanation:"snowfallがdelaysを引き起こすという因果関係。cause delays（遅延を引き起こす）が自然なコロケーション。",translation:"昨晩からの大雪のため、札幌からの飛行機の到着が大幅に遅れている。"},
+  {id:31,q:"Guests at Hayworth Hotel can ——– access most of the city's tourist attractions.",options:["easy","ease","easier","actively"],answer:3,type:"品詞問題",explanation:"助動詞can + 副詞 + 動詞accessの構造。副詞activelyが動詞を修飾する。",translation:"ハイワース・ホテルの宿泊客は市内のほとんどの観光地に簡単にアクセスできます。"},
+  {id:32,q:"TAT Studio required that new employees ——– a training report within a week.",options:["submit","submitted","had submitted","were submitted"],answer:0,type:"動詞問題",explanation:"required that節の中では動詞は原形になる（仮定法現在）。submitが正解。",translation:"TAT Studio社は新入社員が1週間以内に研修報告書を提出することを要求した。"},
+  {id:33,q:"Please note that parking outside of designated areas in national parks is subject to a ——–.",options:["prediction","fine","warranty","committee"],answer:1,type:"語彙問題",explanation:"is subject to a ——–で「〜の対象になる」。fine（罰金）が文脈に合う。",translation:"国立公園内の指定区域外への駐車は罰金の対象となることにご注意ください。"},
+  {id:34,q:"The ——– for the public library submitted by Astra Design Corporation exceeded the budget of the City of Riverdale.",options:["estimating","estimator","estimated","estimate"],answer:3,type:"品詞問題",explanation:"冠詞the + 名詞 + for + 名詞の構造。estimate（見積もり）が名詞として機能する。",translation:"Astra Design Corporation社が提出した公立図書館の見積もりはリバーデール市の予算を超過した。"},
+  {id:35,q:"——– the building application has been approved, construction can begin on the KEP Building.",options:["Upon","Now that","Afterward","Although"],answer:1,type:"接続詞問題",explanation:"接続詞 + 主語 + 動詞の形式。Now that（〜したので）が理由・前提を表す接続詞として適切。",translation:"建築申請が承認されたので、KEPビルの建設を開始することができます。"},
+  {id:36,q:"Star Light Airlines has been looking for a senior accountant for the past six months, but the position ——– open.",options:["contains","hires","holds","remains"],answer:3,type:"語彙問題",explanation:"第2文型：主語 + 動詞 + 補語（形容詞open）。remains open（空いたままである）が自然。",translation:"Star Light Airlines社はここ6ヶ月間シニアアカウンタントを探しているが、その職はいまだ空いたままである。"},
+  {id:37,q:"Beginners in programming can learn the basics in the ——– course offered by TEC School.",options:["introductory","introduced","introducing","introduce"],answer:0,type:"品詞問題",explanation:"冠詞the + 形容詞 + 名詞courseの構造。introductory（入門の）が形容詞として適切。",translation:"プログラミング初心者はTEC Schoolが提供する入門コースで基礎を学ぶことができます。"},
+  {id:38,q:"——– attending the craft workshop next weekend will receive free materials.",options:["Whoever","Anything","Who","Anyone"],answer:3,type:"代名詞問題",explanation:"Anyone + 現在分詞attendingで修飾可能。Anyone who〜と同じ意味になる。",translation:"来週末の工芸ワークショップに参加する人は誰でも無料の材料を受け取ります。"},
+  {id:39,q:"As a result of long-term requests from local residents, construction of the sports center will ——– in June.",options:["commence","modify","predict","establish"],answer:0,type:"語彙問題",explanation:"commence（開始する）は自動詞で目的語不要。will + 自動詞 + in Juneの構造に合う。",translation:"地域住民からの長年の要望を受けて、スポーツセンターの工事が6月に開始されます。"},
+  {id:40,q:"Extensive ——– is needed to find the causes related to recent climate change.",options:["analyst","analyze","analysis","analytic"],answer:2,type:"品詞問題",explanation:"形容詞Extensive + 名詞 + is neededの構造。analysis（分析）が名詞として必要。",translation:"近年の気候変動に関連する原因を特定するには、広範な分析が必要です。"},
+  {id:41,q:"To go to work, Ms. Khan needed to rent a car while ——– was being repaired.",options:["she","herself","her","hers"],answer:3,type:"代名詞問題",explanation:"was being repaired（修理されていた）の主語には所有代名詞hers（彼女の車）が適切。",translation:"仕事に行くためにKhanさんは彼女の車が修理中の間レンタカーを借りる必要があった。"},
+  {id:42,q:"Most customers ——– have purchased the tablets developed by Protech are very satisfied with the long-lasting batteries.",options:["which","whose","who","what"],answer:2,type:"関係代名詞問題",explanation:"先行詞がcustomers（人）で主格の位置ではwhoが適切。whichは物に使う。",translation:"Protech社が開発したタブレットを購入したほとんどの顧客は、長持ちするバッテリーにとても満足している。"},
+  {id:43,q:"Visitors to Haswell Systems must ——– identification at the security desk and receive a visitor badge.",options:["oversee","present","approve","expect"],answer:1,type:"語彙問題",explanation:"主語Visitorsと目的語identificationに合う動詞はpresent（提示する）。",translation:"Haswell Systems社への訪問者は警備デスクで身分証明書を提示して訪問者バッジを受け取らなければならない。"},
+  {id:44,q:"In ——– to requests from local residents, bike lanes have been built on Cooper Street.",options:["responsive","respond","responsively","response"],answer:3,type:"品詞問題",explanation:"前置詞in + 名詞responseの組み合わせ。in response to（〜に応えて）の慣用表現。",translation:"地元の住民の要望に応えて、Cooper通りに自転車専用道路が整備されました。"},
+  {id:45,q:"By expanding into the Southeast Asian market, Telco Creative has been able to more than double its sales ——– the past five years.",options:["among","over","before","onto"],answer:1,type:"語彙問題",explanation:"over the past …で「過去…にわたって」の意味。現在完了と共に使われる。",translation:"東南アジアの市場に進出したことで、Telco Creative社は過去５年間で売り上げを２倍以上にすることができた。"},
+  {id:46,q:"To be ——– to apply for that laboratory technician position, you must have at least three years of work experience.",options:["frequent","eligible","accurate","responsible"],answer:1,type:"語彙問題",explanation:"be eligible to do（〜する資格がある）の表現。TOEICで頻出の語彙。",translation:"その検査技師の求人に応募するためには最低３年の実務経験が必要です。"},
+  {id:47,q:"Digital images such as photos and illustrations in this website may not be used ——– permission.",options:["regarding","unlike","without","following"],answer:2,type:"語彙問題",explanation:"may not be usedとpermissionの関係からwithout（〜がなければ）が適切。without permission（許可なく）。",translation:"当ウェブサイト内の写真やイラストなどのデジタル画像は許可なく使用することができない。"},
+  {id:48,q:"——– who pass the first round of online interviews will be invited for an interview at the company's headquarters.",options:["Application","Applicant","Apply","Applicants"],answer:3,type:"品詞問題",explanation:"関係代名詞who passの前には複数名詞Applicantsが必要。動詞haveが複数を示す。",translation:"オンラインでの１次面接を通過した応募者は、本社での面接に招待されることになっている。"},
+  {id:49,q:"Questions regarding the new reimbursement system should be ——– to Mr. Luis in the accounting department.",options:["asked","coordinated","covered","directed"],answer:3,type:"語彙問題",explanation:"Questions（質問）をto Mr. Luisに向けるという意味でdirected（向ける）が適切。",translation:"新しい経費精算システムに関する質問は経理部のLuisさんに向けてください。"},
+  {id:50,q:"Tickets for Carlin Theater are ——– online three months prior to the performance.",options:["availabilities","available","availability","availably"],answer:1,type:"品詞問題",explanation:"be動詞areの後には形容詞availableが続く。第2文型（S+V+C）の構造。",translation:"Carlin Theaterのチケットは公演の３か月前からオンラインで入手可能です。"},
+  {id:51,q:"Dela Device emphasized the ease of use ——– the durability of its products at the New Tech Convention.",options:["in addition","equally","even though","as well as"],answer:3,type:"接続詞・前置詞問題",explanation:"空所後ろは名詞句で動詞がないため前置詞が必要。as well as（〜だけでなく）が並列構造を作る。",translation:"Dela Device社は、New Tech Conventionでその製品の耐久性だけでなく使いやすさを強調した。"},
+  {id:52,q:"Mr. Ajay's extensive expertise in legal matters makes him the ——– person to lead the legal department.",options:["idealist","ideal","idealism","ideally"],answer:1,type:"品詞問題",explanation:"冠詞the + 形容詞 + 名詞personの構造。形容詞ideal（理想的な）が適切。",translation:"Ajayさんは法律に関して幅広い専門知識を持っているので、法務部門を率いる理想的な人物である。"},
+  {id:53,q:"Mountain View Inn operates a ——– shuttle to the airport as one of its services for guests.",options:["transparent","complimentary","fierce","protective"],answer:1,type:"語彙問題",explanation:"complimentary（無料の）がfreeの言い換え。complimentary shuttle（無料シャトル）が自然なコロケーション。",translation:"Mountain View Innでは、宿泊者向けサービスのひとつとして空港への無料のシャトルバスを運行しています。"},
+  {id:54,q:"Ms. Watanabe ——– a promotion given her sales performance over the past two years.",options:["preserves","reduces","withstands","deserves"],answer:3,type:"語彙問題",explanation:"主語Ms. Watanabeと目的語a promotionの関係から、deserves（〜に値する）が適切。",translation:"過去2年の売上実績を考慮すればワタナベさんは昇進に値します。"},
+  {id:55,q:"Allen & Wolff LLP provides a ——– range of legal services to multinational companies.",options:["width","wide","widen","widely"],answer:1,type:"品詞問題",explanation:"冠詞a + 形容詞 + 名詞rangeの構造。形容詞wide（幅広い）が必要。",translation:"Allen & Wolff LLPは多国籍企業に対して幅広い範囲の法律業務を提供している。"},
+  {id:56,q:"——– to the Baron Art Museum is free for children under 6 years old and seniors over 70 years old.",options:["Request","Compliance","Donation","Admission"],answer:3,type:"語彙問題",explanation:"Baron Art Museumへの〜が無料という文脈。Admission（入場料）が適切。",translation:"6歳未満の子供および70歳を超える高齢者はBaron Art Museumへの入場料は無料である。"},
+  {id:57,q:"Office cleaning services by Kambil Corporation in Detroit are ——– priced, so many local businesses are using them.",options:["reasonable","reasonably","reason","reasoning"],answer:1,type:"品詞問題",explanation:"be動詞are + 副詞 + 過去分詞pricedの構造。副詞reasonably（手頃に）が必要。",translation:"デトロイトにあるKambil Corporationによるオフィス向けの清掃サービスは手ごろな価格であるので、多くの地元企業が利用している。"},
+  {id:58,q:"Since its foundation, Works Uniforms has ——– in the sale of work clothing, footwear, and protective equipment for construction sites.",options:["promoted","assured","affected","specialized"],answer:3,type:"語彙問題",explanation:"直後に前置詞inがある。specialize in（〜を専門とする）の形で適切。",translation:"Works Uniformsは設立以来、建設現場用の作業服や靴、防護用具の販売を専門としている。"},
+  {id:59,q:"The sales meeting at the Hong Kong branch will be held tomorrow ——– at 10:00 a.m.",options:["reliably","potentially","relatively","promptly"],answer:3,type:"語彙問題",explanation:"空所後に時間at 10:00 a.m.がある。promptly（きっかり）が時間を修飾する自然な表現。",translation:"香港支店でのセールス会議は明日のきっかり午前10時から開催されます。"},
+  {id:60,q:"Green Forest Outdoors offers refunds on unused items ——– 7 days of purchase.",options:["before","from","within","until"],answer:2,type:"語彙問題",explanation:"within ——– of...（...から〜以内に）の表現。within 7 days of purchaseで「購入から7日以内」。",translation:"Green Forest Outdoorsでは購入から７日以内の未使用の商品に限り、返金の対象となります。"},
+  {id:61,q:"Ms. Ramos asked her former supervisor, Mr. Taylor, for a ——– letter in order to change jobs.",options:["recommended","recommend","recommendation","recommending"],answer:2,type:"品詞問題",explanation:"複合名詞recommendation letter（推薦状）が正しい形。冠詞+名詞+名詞の構造。",translation:"Ramosさんは転職するためにかつての上司のTaylorさんに推薦状の依頼をした。"},
+  {id:62,q:"Refreshments, including sweets and beverages, ——– at Hansen's retirement party next Friday.",options:["have served","served","will be serving","will be served"],answer:3,type:"動詞問題",explanation:"未来の受動態。Refreshmentsは提供される側なのでwill be served（提供される予定）が適切。",translation:"来週の金曜日に開催されるHansenさんの退職パーティーではお菓子や飲み物といった軽食が出されます。"},
+  {id:63,q:"Thanks to Ms. Johnson's ——– donation, the City of Monterey was able to renovate the civic center last year.",options:["durable","adjacent","fragile","generous"],answer:3,type:"語彙問題",explanation:"generous donation（寛大な寄付）は自然なコロケーション。TOEICで頻出の表現。",translation:"Johnsonさんの寛大な寄付のおかげで、Monterey市は市民会館を昨年改装することができた。"},
+  {id:64,q:"——– some people focus on career advancement, others place more emphasis on enjoying their leisure time.",options:["Since","While","Moreover","Despite"],answer:1,type:"接続詞問題",explanation:"接続詞Whileが対比を表す。「〜である一方で」という意味でothersとの対比に使われる。",translation:"出世を重視する人がいる一方で、余暇の時間を楽しむことを重視する人もいる。"},
+  {id:65,q:"A proposal to relocate the civic library to the city center was ——– approved by the city council.",options:["unanimously","relatively","considerably","affordably"],answer:0,type:"語彙問題",explanation:"unanimously approved（満場一致で可決）が自然なコロケーション。TOEICで頻出。",translation:"市民図書館を市の中心部へ移転する議案は市議会で満場一致で可決された。"},
+  {id:66,q:"Sophia Art Gallery, located in the Queens district, is easily ——– by public transportation.",options:["accessibility","access","accessibly","accessible"],answer:3,type:"品詞問題",explanation:"be動詞 + 副詞easily + 形容詞の構造。accessible（アクセスしやすい）が補語として適切。",translation:"Queens地区にあるSophia Art Galleryは公共交通機関で容易に行くことができます。"},
+  {id:67,q:"Heavy rains last night hit the northwestern part of that town, ——– the river to flood.",options:["were causing","had caused","causing","are caused"],answer:2,type:"動詞問題",explanation:"現在分詞causingが結果を表す分詞構文を作る。「〜して、結果として川が氾濫した」。",translation:"昨晩の激しい雨がその町の北西部を襲い、川が氾濫した。"},
+  {id:68,q:"Any questions regarding ——– leave should be directed to Mr. Dembo in the human resources department.",options:["defective","spacious","paid","prominent"],answer:2,type:"語彙問題",explanation:"paid leave（有給休暇）はTOEICで頻出の表現。",translation:"有給休暇に関する全ての質問は、人事部のDemboさんにご連絡ください。"},
+  {id:69,q:"——– part-time employee is required to enter working hours into the attendance system every day.",options:["All","A lot of","Most","Each"],answer:3,type:"数量詞問題",explanation:"Eachは単数の可算名詞の前に使う。part-time employee（単数）にはEachが適切。",translation:"それぞれのパートタイム社員は、毎日、勤怠管理システムに勤務時間を入力しなければならない。"},
+  {id:70,q:"As a result of streamlining its distribution channels, Amanda International Foods has ——– the big players in the food industry.",options:["signed up for","carried out","filled out","caught up with"],answer:3,type:"語彙問題",explanation:"caught up with（〜に追いついた）が文脈に合う。競合他社に追いつくという意味。",translation:"流通経路を合理化した結果、Amanda International Foodsは食品業界の大手企業に追いついた。"},
+  {id:71,q:"——– you find any mistakes in the brochure, please contact the museum office as soon as possible.",options:["Should","Because","So that","In case of"],answer:0,type:"接続詞問題",explanation:"倒置による条件文。Should you find = If you should find（万が一〜したら）の意味。",translation:"万が一、パンフレットの中に間違いを発見したら、速やかに美術館の事務局に連絡ください。"},
+  {id:72,q:"Three letters of ——– are required to apply for the position of accounting manager at Drexel Pharmaceutical.",options:["referred","refer","referring","reference"],answer:3,type:"品詞問題",explanation:"前置詞ofの後に名詞が必要。letter of reference（照会状・推薦状）が複合名詞として正しい。",translation:"Drexel Pharmaceutical社の経理課長職に応募するためには、3つの照会状が必要です。"},
+  {id:73,q:"——– who have registered for a subscription to the magazine will receive the latest issue of the magazine within a week.",options:["Anyone","Whoever","Each","Those"],answer:3,type:"代名詞問題",explanation:"複数動詞haveが必要なので複数先行詞が必要。Those who（〜した人々）が適切。",translation:"その雑誌の定期購読に登録した人は、1週間以内に最新号の雑誌が届きます。"},
+  {id:74,q:"The development team for the EX01 model has found it ——– to complete that model by September.",options:["difficultly","difficulty","difficulties","difficult"],answer:3,type:"品詞問題",explanation:"第5文型：find + it + 形容詞 + to不定詞の構造。形容詞difficultが補語として必要。",translation:"EX01モデルの開発チームは、そのモデルを9月までに完成させることが難しいと分かった。"},
+  {id:75,q:"Sandeep Technologies is ——– to recycling programs as one of its environmental initiatives.",options:["dedication","dedicated","dedicating","dedicatedly"],answer:1,type:"品詞問題",explanation:"be動詞isの後に形容詞が必要。be dedicated to（〜に専念している）の慣用表現。",translation:"Sandeep Technologiesは環境保護活動の取り組みの一つとしてリサイクリングプログラムに打ち込んでいます。"},
+  {id:76,q:"It is advisable to prepare answers to ——– possible questions at the upcoming workshop.",options:["every","all","another","much"],answer:1,type:"数量詞問題",explanation:"複数可算名詞questionsにはallが使える。everyは単数名詞、muchは不可算名詞に使う。",translation:"今度の研修会で想定されるすべての質問に対して答えを用意しておくことが望ましい。"},
+  {id:77,q:"The City of Orange Bay was able to successfully complete a musical event featuring local artists ——– a lack of funding.",options:["although","nevertheless","unless","despite"],answer:3,type:"接続詞・前置詞問題",explanation:"名詞句a lack of fundingが続くので前置詞が必要。despite（〜にもかかわらず）が適切。",translation:"Orange Bay 市は資金不足にもかかわらず、地元のアーティストによる音楽イベントを無事に終えることができた。"},
+  {id:78,q:"Climbing & Gear's camping tents are lighter and more durable than ——– of its competitors.",options:["them","that","these","those"],answer:3,type:"代名詞問題",explanation:"複数名詞tentsを受けるのでthose（それらのもの）が適切。those of competitors（競合他社のそれ）。",translation:"Climbing & Gearのキャンプ用テントは競合他社のそれよりも軽量で耐久性がある。"},
+  {id:79,q:"By implementing the marketing strategy ——– by Mr. Adams, the theme park has seen a significant increase in the number of visitors.",options:["devising","devised","devise","devises"],answer:1,type:"動詞問題",explanation:"過去分詞devisedが名詞strategyを後置修飾。受動的な意味でAdamsさんに考案された戦略。",translation:"Adamsさんの考案したマーケティング戦略を実行したことによって、そのテーマパークは来場者数を大幅に増やすことに成功した。"},
+  {id:80,q:"Ms. Whitfield ——– several errors in the inventory control manual and reported them to her supervisor.",options:["persuaded","detected","reminded","replaced"],answer:1,type:"語彙問題",explanation:"errorsを見つけるという文脈。detected（発見した）が自然。detect errors（誤りを発見する）。",translation:"Whitfieldさんは在庫管理マニュアルの中にいくつかの間違いを見つけ、上司に報告した。"},
+  {id:81,q:"——– tickets for concerts by new artists are still available at the box office.",options:["Add","Additional","Addition","Additionally"],answer:1,type:"品詞問題",explanation:"空所の後ろに名詞tickets。形容詞Additional（追加の）が名詞を修飾する。",translation:"新人アーティストによるコンサートの追加のチケットはチケット売り場でまだ入手可能です。"},
+  {id:82,q:"By the time Mr. Chang retires next year, he ——– for Delvan Corporation as a mechanical engineer for 15 years.",options:["has worked","had been working","will have worked","worked"],answer:2,type:"時制問題",explanation:"By the timeは時を表す副詞節。主節は未来完了形will have workedが適切。",translation:"Changさんは来年退職する時までに、Delvan Corporationで15年、メカニカルエンジニアとして働いたことになる。"},
+  {id:83,q:"——– the human resources director, it seems to take more than three days to look over all the applications.",options:["Instead of","According to","In addition to","Prior to"],answer:1,type:"語彙問題",explanation:"「人事部長によれば」の意味でAccording to（〜によれば）が適切。",translation:"人事部長によれば、すべての応募書類に目を通すのに3日以上かかるようだ。"},
+  {id:84,q:"The mayor thanked his supporters for their ——– comments at yesterday's press conference.",options:["encourage","encouraged","encourages","encouraging"],answer:3,type:"品詞問題",explanation:"所有格 + 形容詞 + 名詞の構造。commentsは人を励ます性質があるのでencouraging（励ます）が形容詞として適切。",translation:"市長は、昨日の記者会見で支持者たちの励ましのコメントに対してお礼を言った。"},
+  {id:85,q:"——– an annual event, the Fuji Live Aid Festival is now held every two years.",options:["Originating","Originated","Original","Originally"],answer:3,type:"品詞問題",explanation:"「当初は年1回のイベントだったが」という意味で副詞Originally（当初は）が文修飾する。",translation:"当初年1回の開催でしたが、Fuji Live Aid Festivalは現在2年に1回開催されています。"},
+  {id:86,q:"Ms. Bhat joined Campion Consulting after earning a master's ——– in business administration in the UK.",options:["degree","pension","commission","subject"],answer:0,type:"語彙問題",explanation:"master's degree（修士号）が自然な複合名詞。in business administration（経営学の）が後続。",translation:"Bhatさんは、英国で経営学の修士号を取得したあとに、Campion Consultingに入社した。"},
+  {id:87,q:"If you have forgotten your password, enter ——– email address here to send it to us.",options:["you","yourself","yours","your"],answer:3,type:"代名詞問題",explanation:"所有格 + 名詞の構造。email addressを修飾する所有格yourが適切。",translation:"パスワードを忘れた場合は、あなたのメールアドレスをここに入力して送信してください。"},
+  {id:88,q:"The factory's labor management manual clearly states that minimum safety standards must be met, ——– much it costs.",options:["very","however","moreover","even"],answer:1,type:"語彙問題",explanation:"however much it costsで「どんなにコストがかかろうと」という譲歩表現。",translation:"工場の労務管理マニュアルにはどんなにコストがかかろうと、最低限の安全基準は満たさなければならないと明記されている。"},
+  {id:89,q:"——– Ms. Darville nor Mr. Nichols has the registered dietitian license required for the position.",options:["Either","Both","Neither","Not only"],answer:2,type:"相関接続詞問題",explanation:"norとペアになる相関接続詞はNeither。Neither A nor Bで「AもBもどちらも〜ない」の意味。",translation:"DarvilleさんもNicholsさんもその職が求める管理栄養士の資格を持っていません。"},
+  {id:90,q:"Mr. Davies has already worked at our plant for 15 years and is ——– the most skilled welders.",options:["within","during","among","from"],answer:2,type:"語彙問題",explanation:"among the most skilled weldersで「最も熟練した溶接工の一人」。be among（〜の一人である）の表現。",translation:"Daviesさんは、当工場ですでに15年働いていて、最も熟練した溶接工の一人です。"},
+  {id:91,q:"Altona Grocery Store has a good reputation because it carries ——– grown vegetables.",options:["locality","localize","local","locally"],answer:3,type:"品詞問題",explanation:"過去分詞grownを修飾する副詞が必要。locally（地元で）grown vegetablesで「地元産の野菜」。",translation:"Altona Grocery Storeは地元で栽培された野菜を販売しているため、評判が良い。"},
+  {id:92,q:"The flooring materials developed by Bellevue Manufacturing are ——– to moisture.",options:["considerable","loyal","resistant","capable"],answer:2,type:"語彙問題",explanation:"be resistant to（〜に耐性がある）が自然なコロケーション。moisture（湿気）への耐性。",translation:"Bellevue Manufacturing社が開発した床材は湿気に強い。"},
+  {id:93,q:"A ——– market study is required by Hillside Ad Company's board of directors before its ambitious business plan is implemented.",options:["comprehensive","comprehend","comprehension","comprehensively"],answer:0,type:"品詞問題",explanation:"冠詞A + 形容詞 + 名詞market studyの構造。形容詞comprehensive（包括的な）が必要。",translation:"Hillside Ad Company社の取締役会は、野心的な事業計画を実施する前に包括的な市場調査を求めている。"},
+  {id:94,q:"Due to the successful launch of new products last quarter, ——– employee will receive a special bonus at the end of this month.",options:["most of","most","all","every"],answer:3,type:"数量詞問題",explanation:"単数可算名詞employeeの前にはeveryが使える。every employee（すべての従業員それぞれ）。",translation:"先四半期の新製品の発売が成功したため、すべての従業員が今月末に特別ボーナスを受け取ることになる。"},
+  {id:95,q:"During ——–, the plant manager noticed something wrong with the conveyor belt on the north side.",options:["assemble","assembled","assembles","assembly"],answer:3,type:"品詞問題",explanation:"前置詞duringの後には名詞が必要。assembly（組み立て作業）が名詞として適切。",translation:"組み立て作業中、工場長は北側のコンベヤーベルトに異常を発見した。"},
+  {id:96,q:"It is widely believed that the quality of sleep, ——– eating habits, has a significant impact on health.",options:["on behalf of","along with","in charge of","by means of"],answer:1,type:"語彙問題",explanation:"along with（〜とともに）が並列を表す。sleep qualityとeating habitsを健康への影響として並列する。",translation:"睡眠の質は、食習慣とともに、健康に大きな影響を与えると広く信じられている。"},
+  {id:97,q:"Mr. Daoud is very satisfied with the ——– living room in the Japanese style.",options:["renovating","renovation","renovated","renovate"],answer:2,type:"品詞問題",explanation:"過去分詞renovatedが名詞living roomを修飾。改装された（受け身の意味）リビングルーム。",translation:"ダウドさんは和風にリノベーションされたリビングルームにとても満足している。"},
+  {id:98,q:"The classical concert next week is expected to draw a ——– number of patrons than last year.",options:["large","largest","more largely","larger"],answer:3,type:"比較問題",explanation:"thanがあるので比較級が必要。larger number of（より多くの）が正しい比較表現。",translation:"来週のクラシックコンサートは昨年よりも多くの客が来ると予想されている。"},
+  {id:99,q:"Mr. Peppin will report to his supervisor about the finance workshop he ——– in Seoul last week.",options:["will be attend","attends","is attending","attended"],answer:3,type:"時制問題",explanation:"last week（先週）という過去を示す副詞句があるので過去形attendedが適切。",translation:"ペパンさんは先週ソウルで参加した財務ワークショップについて上司に報告する予定です。"},
+  {id:100,q:"Since its establishment, Stellen Group has ——– emphasized customer satisfaction.",options:["consistency","consistently","consistent","consistence"],answer:1,type:"品詞問題",explanation:"現在完了has + 副詞 + 過去分詞の構造。副詞consistently（一貫して）がemphasizedを修飾する。",translation:"設立以来、Stellen Groupは一貫して顧客満足を重視してきた。"}
+];
+
+// ===== STATE =====
+let mode = 'all';
+let selectedRange = 'all';
+let activeQuestions = [];
+let currentIdx = 0;
+let answers = {};  // questionId -> { chosen, correct }
+let timerInterval = null;
+let startTime = null;
+let wrongIds = [];
+
+// Load from localStorage
+function loadState() {
+  const saved = localStorage.getItem('toeic_wrong_ids');
+  if (saved) wrongIds = JSON.parse(saved);
+  const prev = localStorage.getItem('toeic_last_result');
+  if (prev) {
+    const r = JSON.parse(prev);
+    document.getElementById('prev-result').style.display = 'block';
+    document.getElementById('prev-result-text').textContent = `${r.correct}/${r.total}問正解 (${r.pct}%)`;
+  }
+}
+
+function saveWrongIds() {
+  localStorage.setItem('toeic_wrong_ids', JSON.stringify(wrongIds));
+}
+
+// ===== HOME LOGIC =====
+function selectMode(el, m) {
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  mode = m;
+}
+
+function selectRange(el, r) {
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedRange = r;
+}
+
+function getQuestionsForRange(range) {
+  if (range === 'all') return [...QUESTIONS];
+  const [s, e] = range.split('-').map(Number);
+  return QUESTIONS.filter(q => q.id >= s && q.id <= e);
+}
+
+function startQuiz() {
+  let qs = getQuestionsForRange(selectedRange);
+  if (mode === 'shuffle') {
+    qs = [...qs].sort(() => Math.random() - 0.5);
+  } else if (mode === 'review') {
+    if (wrongIds.length === 0) {
+      alert('間違えた問題がありません。まず通常モードで問題を解いてください。');
+      return;
+    }
+    qs = QUESTIONS.filter(q => wrongIds.includes(q.id));
+    qs = qs.sort(() => Math.random() - 0.5);
+  }
+  activeQuestions = qs;
+  currentIdx = 0;
+  answers = {};
+  document.getElementById('home-screen').style.display = 'none';
+  document.getElementById('question-screen').style.display = 'block';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('header-score').style.display = 'flex';
+  document.getElementById('timer').style.display = 'flex';
+  startTime = Date.now();
+  startTimer();
+  renderQuestion();
+}
+
+// ===== TIMER =====
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const s = String(elapsed % 60).padStart(2, '0');
+    document.getElementById('timer').textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+}
+
+// ===== QUESTION RENDERING =====
+function renderQuestion() {
+  const q = activeQuestions[currentIdx];
+  const total = activeQuestions.length;
+
+  // progress bar
+  document.getElementById('progress-bar').style.width = `${(currentIdx / total) * 100}%`;
+
+  // header score
+  const correct = Object.values(answers).filter(a => a.correct).length;
+  const answered = Object.values(answers).length;
+  document.getElementById('header-score').textContent = `✓ ${correct} / ${answered}`;
+
+  // q-nav dots
+  const nav = document.getElementById('q-nav');
+  nav.innerHTML = '';
+  activeQuestions.forEach((qq, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'q-dot';
+    dot.textContent = qq.id;
+    dot.onclick = () => jumpTo(i);
+    if (i === currentIdx) dot.classList.add('current');
+    else if (answers[qq.id]) {
+      dot.classList.add(answers[qq.id].correct ? 'answered-correct' : 'answered-wrong');
+    }
+    nav.appendChild(dot);
+  });
+
+  // meta
+  document.getElementById('q-num').textContent = `問題 ${currentIdx + 1} / ${total}`;
+  document.getElementById('q-type').textContent = q.type;
+
+  // question text
+  const qtext = q.q.replace(/——–/g, '<em>　　　　</em>');
+  document.getElementById('question-text').innerHTML = qtext;
+
+  // choices
+  const letters = ['A','B','C','D'];
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'choice';
+    div.id = `choice-${i}`;
+    div.innerHTML = `<span class="choice-letter">${letters[i]}</span><span>${opt}</span>`;
+    div.onclick = () => selectAnswer(i);
+    choicesEl.appendChild(div);
+  });
+
+  // explanation
+  const expEl = document.getElementById('explanation');
+  expEl.classList.remove('show');
+  document.getElementById('btn-next').style.display = 'none';
+  document.getElementById('btn-prev').style.display = currentIdx > 0 ? 'inline-block' : 'none';
+
+  // if already answered
+  if (answers[q.id]) {
+    showAnswerState(q, answers[q.id].chosen);
+  }
+}
+
+function selectAnswer(chosenIdx) {
+  const q = activeQuestions[currentIdx];
+  if (answers[q.id]) return; // already answered
+
+  const isCorrect = chosenIdx === q.answer;
+  answers[q.id] = { chosen: chosenIdx, correct: isCorrect };
+
+  // track wrong
+  if (!isCorrect) {
+    if (!wrongIds.includes(q.id)) wrongIds.push(q.id);
+  } else {
+    wrongIds = wrongIds.filter(id => id !== q.id);
+  }
+  saveWrongIds();
+
+  showAnswerState(q, chosenIdx);
+}
+
+function showAnswerState(q, chosenIdx) {
+  const letters = ['A','B','C','D'];
+  const isCorrect = chosenIdx === q.answer;
+
+  // style choices
+  document.querySelectorAll('.choice').forEach((el, i) => {
+    el.classList.add('disabled');
+    el.onclick = null;
+    if (i === q.answer) el.classList.add('correct');
+    else if (i === chosenIdx && !isCorrect) el.classList.add('wrong');
+  });
+
+  // explanation
+  const expEl = document.getElementById('explanation');
+  const badge = document.getElementById('result-badge');
+  badge.innerHTML = isCorrect
+    ? '<span class="result-badge correct">✓ 正解！</span>'
+    : `<span class="result-badge wrong">✗ 不正解 — 正解は (${letters[q.answer]}) ${q.options[q.answer]}</span>`;
+  document.getElementById('exp-body').textContent = q.explanation;
+  document.getElementById('exp-translation').textContent = q.translation;
+  expEl.classList.add('show');
+
+  document.getElementById('btn-next').style.display = 'inline-block';
+  document.getElementById('btn-next').textContent =
+    currentIdx < activeQuestions.length - 1 ? '次へ →' : '結果を見る';
+
+  // update header score
+  const correct = Object.values(answers).filter(a => a.correct).length;
+  const answered = Object.values(answers).length;
+  document.getElementById('header-score').textContent = `✓ ${correct} / ${answered}`;
+}
+
+function nextQuestion() {
+  if (currentIdx < activeQuestions.length - 1) {
+    currentIdx++;
+    renderQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    showResult();
+  }
+}
+
+function prevQuestion() {
+  if (currentIdx > 0) {
+    currentIdx--;
+    renderQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function jumpTo(idx) {
+  currentIdx = idx;
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function endQuiz() {
+  if (Object.keys(answers).length === 0 || confirm('途中終了しますか？')) {
+    showResult();
+  }
+}
+
+// ===== RESULT =====
+function showResult() {
+  stopTimer();
+  const total = activeQuestions.length;
+  const correct = Object.values(answers).filter(a => a.correct).length;
+  const wrong = Object.values(answers).filter(a => !a.correct).length;
+  const skip = total - Object.keys(answers).length;
+  const pct = Math.round((correct / total) * 100);
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const em = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const es = String(elapsed % 60).padStart(2, '0');
+
+  localStorage.setItem('toeic_last_result', JSON.stringify({ correct, total, pct }));
+
+  document.getElementById('question-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+  document.getElementById('progress-bar').style.width = '100%';
+
+  // circle
+  const circle = document.getElementById('score-circle');
+  circle.style.setProperty('--pct', `${pct}%`);
+  document.getElementById('score-pct').textContent = `${pct}%`;
+
+  // msg
+  let msg = '';
+  if (pct >= 90) msg = '素晴らしい！完璧に近い！';
+  else if (pct >= 70) msg = 'よくできました！';
+  else if (pct >= 50) msg = 'もう少し！復習で伸びます。';
+  else msg = 'ここから！間違えた問題を復習しよう。';
+  document.getElementById('score-msg').textContent = msg;
+  document.getElementById('time-elapsed').textContent = `所要時間：${em}:${es}`;
+
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-wrong').textContent = wrong;
+  document.getElementById('stat-skip').textContent = skip;
+
+  // review list
+  const reviewList = document.getElementById('review-list');
+  const wrongAnswers = activeQuestions.filter(q => answers[q.id] && !answers[q.id].correct);
+  if (wrongAnswers.length > 0) {
+    reviewList.innerHTML = `<h3>間違えた問題 (${wrongAnswers.length}問)</h3>`;
+    wrongAnswers.forEach(q => {
+      const div = document.createElement('div');
+      div.className = 'review-item';
+      const chosenIdx = answers[q.id].chosen;
+      const letters = ['A','B','C','D'];
+      div.innerHTML = `
+        <span class="q-label">Q${q.id}</span>
+        <span class="q-preview">
+          ${q.q.substring(0, 60)}...<br>
+          <strong>あなたの答え：(${letters[chosenIdx]}) ${q.options[chosenIdx]}</strong>　→
+          <strong style="color:var(--green)">正解：(${letters[q.answer]}) ${q.options[q.answer]}</strong>
+        </span>`;
+      div.onclick = () => jumpToReview(q.id);
+      reviewList.appendChild(div);
+    });
+    document.getElementById('btn-review-wrong').style.display = 'inline-block';
+  } else {
+    reviewList.innerHTML = '';
+    document.getElementById('btn-review-wrong').style.display = 'none';
+  }
+}
+
+function jumpToReview(qid) {
+  const idx = activeQuestions.findIndex(q => q.id === qid);
+  if (idx >= 0) {
+    currentIdx = idx;
+    document.getElementById('result-screen').style.display = 'none';
+    document.getElementById('question-screen').style.display = 'block';
+    renderQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function reviewWrong() {
+  mode = 'review';
+  goHome();
+  setTimeout(() => {
+    document.querySelector('[data-mode="review"]').click();
+    startQuiz();
+  }, 100);
+}
+
+function goHome() {
+  stopTimer();
+  document.getElementById('question-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('home-screen').style.display = 'block';
+  document.getElementById('header-score').style.display = 'none';
+  document.getElementById('timer').style.display = 'none';
+  document.getElementById('progress-bar').style.width = '0%';
+  loadState();
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', e => {
+  if (document.getElementById('question-screen').style.display === 'none') return;
+  const q = activeQuestions[currentIdx];
+  if (!q) return;
+  if (['a','b','c','d','1','2','3','4'].includes(e.key.toLowerCase())) {
+    const map = { a:0, b:1, c:2, d:3, '1':0, '2':1, '3':2, '4':3 };
+    const idx = map[e.key.toLowerCase()];
+    if (!answers[q.id]) selectAnswer(idx);
+  }
+  if (e.key === 'ArrowRight' || e.key === 'Enter') {
+    if (answers[q.id]) nextQuestion();
+  }
+  if (e.key === 'ArrowLeft') prevQuestion();
+});
+
+// ===== INIT =====
+loadState();
+</script>
+</body>
+</html>
