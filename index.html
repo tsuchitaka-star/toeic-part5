@@ -157,6 +157,39 @@
   .count-btn:hover { border-color: var(--blue); color: var(--blue); }
   .count-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
 
+  .cat-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cat-btn {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .cat-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .cat-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+
+  .top-link-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+  }
+  .btn-link {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn-link:hover { border-color: var(--blue); color: var(--blue); }
+
   .btn-start {
     background: var(--blue);
     color: white;
@@ -388,6 +421,68 @@
   .review-item .q-label { font-size: 0.8rem; font-weight: 700; color: var(--red); flex-shrink: 0; }
   .review-item .q-preview { font-size: 0.82rem; color: #374151; line-height: 1.5; }
 
+  /* ===== DASHBOARD ===== */
+  #dashboard-screen { display: none; padding: 20px 0; }
+  #dashboard-screen h2 { font-size: 1.4rem; margin-bottom: 16px; color: var(--blue); }
+  .dash-summary {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    text-align: center;
+  }
+  .dash-summary .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--blue); }
+  .dash-summary .stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+  .dash-cat-list { display: flex; flex-direction: column; gap: 12px; }
+  .dash-cat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    text-align: left;
+  }
+  .dash-cat-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .dash-cat-name { font-weight: 700; font-size: 0.95rem; }
+  .dash-cat-stats { font-size: 0.78rem; color: var(--text-muted); }
+  .dash-bar-bg {
+    height: 8px;
+    background: var(--gray-light);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .dash-bar-fill { height: 100%; background: var(--green); transition: width 0.3s; border-radius: 4px; }
+  .dash-bar-fill.progress { background: var(--blue); }
+  .dash-cat-bars { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .dash-bar-row { display: flex; align-items: center; gap: 8px; }
+  .dash-bar-row .dash-bar-label { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; width: 64px; flex-shrink: 0; }
+  .dash-bar-row .dash-bar-bg { flex: 1; margin-bottom: 0; }
+  .dash-cat-actions { text-align: right; }
+  .dash-cat-btn {
+    padding: 5px 14px;
+    border-radius: 16px;
+    border: 1.5px solid var(--blue);
+    background: white;
+    color: var(--blue);
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .dash-cat-btn:hover { background: var(--blue); color: white; }
+
   /* ===== QUESTION NAV DOT ===== */
   .q-nav {
     display: flex;
@@ -442,6 +537,9 @@
 
 <!-- ===== HOME ===== -->
 <div id="home-screen">
+  <div class="top-link-row">
+    <button class="btn-link" onclick="showDashboard()">📊 学習ダッシュボード</button>
+  </div>
   <h2>TOEIC Part 5</h2>
   <p>品詞・語彙・文法を集中トレーニング</p>
 
@@ -460,6 +558,13 @@
       <div class="icon">🔁</div>
       <h3>復習モード</h3>
       <p>間違えた問題だけ再挑戦</p>
+    </div>
+  </div>
+
+  <div class="range-select">
+    <h3>カテゴリーで絞り込み</h3>
+    <div class="cat-btns" id="cat-btns">
+      <button class="cat-btn active" onclick="selectCategory(this,null)">全カテゴリー</button>
     </div>
   </div>
 
@@ -556,6 +661,31 @@
     <button class="btn btn-primary" onclick="reviewWrong()" id="btn-review-wrong">間違えた問題を復習</button>
     <button class="btn btn-secondary" onclick="goHome()">ホームへ戻る</button>
   </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="dashboard-screen">
+  <div class="top-link-row">
+    <button class="btn-link" onclick="goHome()">← ホームへ戻る</button>
+  </div>
+  <h2>学習ダッシュボード</h2>
+
+  <div class="dash-summary">
+    <div>
+      <div class="stat-val" id="dash-total-answered">0</div>
+      <div class="stat-label">回答済み問題数</div>
+    </div>
+    <div>
+      <div class="stat-val" id="dash-total-correct">0</div>
+      <div class="stat-label">正解できている問題</div>
+    </div>
+    <div>
+      <div class="stat-val" id="dash-total-pct">0%</div>
+      <div class="stat-label">全体の習得率</div>
+    </div>
+  </div>
+
+  <div class="dash-cat-list" id="dash-cat-list"></div>
 </div>
 
 </main>
@@ -2196,15 +2326,33 @@ const QUESTIONS = [
   {id:1660,q:"The training program at Ellicott Academy was ——– successful in improving employee communication skills.",options:["much","correctly","far","highly"],answer:3,type:"<strong>語彙問題</strong>",explanation:"空所の前はwas、後ろは形容詞successful（成功した）です。形容詞successfulを修飾して「非常に成功した」という意味を表すには、(D) highly（非常に、高度に）が最も適切です。highly successfulは一般的な表現です。",translation:"Ellicott Academyのトレーニングプログラムは、従業員のコミュニケーションスキル向上において非常に成功しました。"}
 ];
 
+// ===== CATEGORIES =====
+const CATEGORIES = ['語彙問題','品詞問題','動詞・時制問題','代名詞問題','接続詞・前置詞問題','関係詞問題','比較・数量問題','読解問題','その他'];
+
+function getCategory(q) {
+  const t = q.type.replace(/<[^>]+>/g, '');
+  if (t.includes('語彙')) return '語彙問題';
+  if (t.includes('品詞')) return '品詞問題';
+  if (t.includes('代名詞') && !t.includes('関係')) return '代名詞問題';
+  if (t.includes('関係')) return '関係詞問題';
+  if (t.includes('動詞') || t.includes('時制') || t.includes('態')) return '動詞・時制問題';
+  if (t.includes('接続詞') || t.includes('前置詞') || t.includes('副詞')) return '接続詞・前置詞問題';
+  if (t.includes('比較') || t.includes('数量')) return '比較・数量問題';
+  if (t.includes('読み')) return '読解問題';
+  return 'その他';
+}
+
 // ===== STATE =====
 let mode = 'all';
 let rangeCount = 0; // 0 = 全問
+let selectedCategory = null; // null = 全カテゴリー
 let activeQuestions = [];
 let currentIdx = 0;
 let answers = {};  // questionId -> { chosen, correct }
 let timerInterval = null;
 let startTime = null;
 let wrongIds = [];
+let questionStats = {}; // questionId -> { attempts, correct, lastCorrect }
 
 // Load from localStorage
 function loadState() {
@@ -2216,6 +2364,16 @@ function loadState() {
     document.getElementById('prev-result').style.display = 'block';
     document.getElementById('prev-result-text').textContent = `${r.correct}/${r.total}問正解 (${r.pct}%)`;
   }
+  loadQuestionStats();
+}
+
+function loadQuestionStats() {
+  const saved = localStorage.getItem('toeic_question_stats');
+  questionStats = saved ? JSON.parse(saved) : {};
+}
+
+function saveQuestionStats() {
+  localStorage.setItem('toeic_question_stats', JSON.stringify(questionStats));
 }
 
 function saveWrongIds() {
@@ -2237,12 +2395,36 @@ function setCount(el, n) {
   if (startInput) startInput.disabled = (n === 0);
 }
 
+function selectCategory(el, cat) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedCategory = cat;
+}
+
+function initCategoryButtons() {
+  const counts = {};
+  for (const q of QUESTIONS) {
+    const c = getCategory(q);
+    counts[c] = (counts[c] || 0) + 1;
+  }
+  const container = document.getElementById('cat-btns');
+  for (const cat of CATEGORIES) {
+    if (!counts[cat]) continue;
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn';
+    btn.textContent = `${cat} (${counts[cat]})`;
+    btn.onclick = () => selectCategory(btn, cat);
+    container.appendChild(btn);
+  }
+}
+
 function getActiveQuestions() {
-  if (rangeCount === 0) return [...QUESTIONS];
+  const pool = selectedCategory ? QUESTIONS.filter(q => getCategory(q) === selectedCategory) : QUESTIONS;
+  if (rangeCount === 0) return [...pool];
   const startVal = parseInt(document.getElementById('q-start').value) || 1;
-  const idx = QUESTIONS.findIndex(q => q.id >= startVal);
-  const from = (idx < 0) ? Math.max(0, QUESTIONS.length - rangeCount) : idx;
-  return QUESTIONS.slice(from, from + rangeCount);
+  const idx = pool.findIndex(q => q.id >= startVal);
+  const from = (idx < 0) ? Math.max(0, pool.length - rangeCount) : idx;
+  return pool.slice(from, from + rangeCount);
 }
 
 function startQuiz() {
@@ -2360,6 +2542,14 @@ function selectAnswer(chosenIdx) {
     wrongIds = wrongIds.filter(id => id !== q.id);
   }
   saveWrongIds();
+
+  // track per-question stats for dashboard
+  const stat = questionStats[q.id] || { attempts: 0, correct: 0, lastCorrect: false };
+  stat.attempts++;
+  if (isCorrect) stat.correct++;
+  stat.lastCorrect = isCorrect;
+  questionStats[q.id] = stat;
+  saveQuestionStats();
 
   showAnswerState(q, chosenIdx);
 }
@@ -2513,11 +2703,83 @@ function goHome() {
   stopTimer();
   document.getElementById('question-screen').style.display = 'none';
   document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('dashboard-screen').style.display = 'none';
   document.getElementById('home-screen').style.display = 'block';
   document.getElementById('header-score').style.display = 'none';
   document.getElementById('timer').style.display = 'none';
   document.getElementById('progress-bar').style.width = '0%';
   loadState();
+}
+
+// ===== DASHBOARD =====
+function showDashboard() {
+  loadQuestionStats();
+  renderDashboard();
+  document.getElementById('home-screen').style.display = 'none';
+  document.getElementById('dashboard-screen').style.display = 'block';
+}
+
+function renderDashboard() {
+  let totalAnswered = 0, totalMastered = 0;
+  const catData = {};
+  for (const cat of CATEGORIES) catData[cat] = { total: 0, answered: 0, mastered: 0 };
+
+  for (const q of QUESTIONS) {
+    const cat = getCategory(q);
+    catData[cat].total++;
+    const s = questionStats[q.id];
+    if (s && s.attempts > 0) {
+      catData[cat].answered++;
+      totalAnswered++;
+      if (s.lastCorrect) {
+        catData[cat].mastered++;
+        totalMastered++;
+      }
+    }
+  }
+
+  const totalQ = QUESTIONS.length;
+  document.getElementById('dash-total-answered').textContent = `${totalAnswered} / ${totalQ}`;
+  document.getElementById('dash-total-correct').textContent = `${totalMastered}`;
+  document.getElementById('dash-total-pct').textContent = totalQ ? `${Math.round(totalMastered / totalQ * 100)}%` : '0%';
+
+  const list = document.getElementById('dash-cat-list');
+  list.innerHTML = '';
+  for (const cat of CATEGORIES) {
+    const d = catData[cat];
+    if (!d || d.total === 0) continue;
+    const progressPct = Math.round(d.answered / d.total * 100);
+    const masteryPct = Math.round(d.mastered / d.total * 100);
+    const card = document.createElement('div');
+    card.className = 'dash-cat-card';
+    card.innerHTML = `
+      <div class="dash-cat-head">
+        <span class="dash-cat-name">${cat}</span>
+        <span class="dash-cat-stats">回答済み ${d.answered}/${d.total}問・正解 ${d.mastered}問 (${masteryPct}%)</span>
+      </div>
+      <div class="dash-cat-bars">
+        <div class="dash-bar-row">
+          <span class="dash-bar-label">進捗</span>
+          <div class="dash-bar-bg"><div class="dash-bar-fill progress" style="width:${progressPct}%"></div></div>
+        </div>
+        <div class="dash-bar-row">
+          <span class="dash-bar-label">習得率</span>
+          <div class="dash-bar-bg"><div class="dash-bar-fill" style="width:${masteryPct}%"></div></div>
+        </div>
+      </div>
+      <div class="dash-cat-actions">
+        <button class="dash-cat-btn" onclick="startCategoryQuiz('${cat}')">このカテゴリーを解く</button>
+      </div>
+    `;
+    list.appendChild(card);
+  }
+}
+
+function startCategoryQuiz(cat) {
+  selectedCategory = cat;
+  rangeCount = 0;
+  document.getElementById('dashboard-screen').style.display = 'none';
+  startQuiz();
 }
 
 // ===== KEYBOARD SHORTCUTS =====
@@ -2537,6 +2799,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ===== INIT =====
+initCategoryButtons();
 loadState();
 </script>
 </body>
