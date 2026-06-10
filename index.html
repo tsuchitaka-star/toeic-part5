@@ -183,6 +183,48 @@
   }
   .btn-link:hover { border-color: var(--blue); color: var(--blue); }
 
+  .top-link-row { gap: 8px; flex-wrap: wrap; }
+  .auth-email {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .sync-status {
+    font-size: 0.78rem;
+    color: var(--green);
+    margin-bottom: 16px;
+    margin-top: -16px;
+  }
+
+  /* ===== AUTH MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    max-width: 360px;
+    width: 100%;
+    text-align: left;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .modal-box h3 { font-size: 1.05rem; margin-bottom: 8px; }
+  .modal-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; }
+  .modal-box .select-input { margin-bottom: 10px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
+  .modal-actions .btn { flex: 1; }
+  .auth-error { color: var(--red); font-size: 0.8rem; margin: 4px 0 0; min-height: 1em; }
+
   .btn-start {
     background: var(--blue);
     color: white;
@@ -531,10 +573,18 @@
 <!-- ===== HOME ===== -->
 <div id="home-screen">
   <div class="top-link-row">
+    <span id="auth-logged-in" style="display:none;">
+      <span class="auth-email" id="auth-email"></span>
+      <button class="btn-link" onclick="firebaseSignOut()">ログアウト</button>
+    </span>
+    <span id="auth-logged-out" style="display:none;">
+      <button class="btn-link" onclick="openAuthModal()">🔑 ログイン / 新規登録</button>
+    </span>
     <button class="btn-link" onclick="showDashboard()">📊 学習ダッシュボード</button>
   </div>
   <h2>TOEIC Part 5</h2>
   <p>品詞・語彙・文法を集中トレーニング</p>
+  <p id="sync-status" class="sync-status" style="display:none;"></p>
 
   <div class="mode-cards">
     <div class="mode-card selected" data-mode="all" onclick="selectMode(this,'all')">
@@ -688,7 +738,34 @@
   <div class="dash-cat-list" id="dash-cat-list"></div>
 </div>
 
+<!-- ===== AUTH MODAL ===== -->
+<div id="auth-modal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>ログイン / 新規登録</h3>
+    <p class="modal-desc">ログインすると学習記録（解答状況）がアカウントに保存され、複数の端末で共有できます。</p>
+    <input type="email" id="auth-email-input" class="select-input" placeholder="メールアドレス" autocomplete="email">
+    <input type="password" id="auth-password-input" class="select-input" placeholder="パスワード（6文字以上）" autocomplete="current-password">
+    <p id="auth-error" class="auth-error"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="firebaseSignIn()">ログイン</button>
+      <button class="btn btn-secondary" onclick="firebaseSignUp()">新規登録</button>
+    </div>
+    <button class="btn-link" style="margin-top:12px;" onclick="closeAuthModal()">閉じる</button>
+  </div>
+</div>
+
 </main>
+
+<!-- ===== FIREBASE (任意: アカウント同期) ===== -->
+<!--
+  アカウント同期を有効にするには、下の firebaseConfig に
+  Firebase コンソールで取得した設定値を貼り付けてください。
+  apiKey が "YOUR_API_KEY" のままの場合、同期機能は無効になり、
+  これまで通り端末内(localStorage)のみで動作します。
+-->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
 const QUESTIONS = [
@@ -2373,12 +2450,14 @@ function loadQuestionStats() {
   questionStats = saved ? JSON.parse(saved) : {};
 }
 
-function saveQuestionStats() {
+function saveQuestionStats(skipSync) {
   localStorage.setItem('toeic_question_stats', JSON.stringify(questionStats));
+  if (!skipSync) syncToCloud();
 }
 
-function saveWrongIds() {
+function saveWrongIds(skipSync) {
   localStorage.setItem('toeic_wrong_ids', JSON.stringify(wrongIds));
+  if (!skipSync) syncToCloud();
 }
 
 // ===== HOME LOGIC =====
@@ -2670,6 +2749,7 @@ function showResult() {
   const es = String(elapsed % 60).padStart(2, '0');
 
   localStorage.setItem('toeic_last_result', JSON.stringify({ correct, total, pct }));
+  syncToCloud();
 
   document.getElementById('question-screen').style.display = 'none';
   document.getElementById('result-screen').style.display = 'block';
@@ -2844,6 +2924,156 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'ArrowLeft') prevQuestion();
 });
+
+// ===== FIREBASE SYNC (optional) =====
+// アカウント同期を使う場合は、Firebaseコンソールで取得した設定値に書き換えてください。
+// apiKey が "YOUR_API_KEY" のままなら同期機能は無効のままです（端末内保存のみ）。
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+let cloudEnabled = false;
+let cloudUser = null;
+let db = null;
+let syncTimer = null;
+
+if (typeof firebase !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    cloudEnabled = true;
+  } catch (e) {
+    console.error('Firebase init failed', e);
+  }
+}
+
+function openAuthModal() {
+  document.getElementById('auth-error').textContent = '';
+  document.getElementById('auth-modal').classList.add('show');
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal').classList.remove('show');
+}
+
+function translateAuthError(e) {
+  const map = {
+    'auth/invalid-email': 'メールアドレスの形式が正しくありません。',
+    'auth/email-already-in-use': 'このメールアドレスは既に登録されています。',
+    'auth/weak-password': 'パスワードは6文字以上にしてください。',
+    'auth/wrong-password': 'パスワードが間違っています。',
+    'auth/user-not-found': 'このメールアドレスは登録されていません。',
+    'auth/invalid-credential': 'メールアドレスまたはパスワードが正しくありません。'
+  };
+  return map[e.code] || ('エラー: ' + e.message);
+}
+
+function firebaseSignUp() {
+  if (!cloudEnabled) return;
+  const email = document.getElementById('auth-email-input').value.trim();
+  const pass = document.getElementById('auth-password-input').value;
+  firebase.auth().createUserWithEmailAndPassword(email, pass)
+    .then(() => closeAuthModal())
+    .catch(e => { document.getElementById('auth-error').textContent = translateAuthError(e); });
+}
+
+function firebaseSignIn() {
+  if (!cloudEnabled) return;
+  const email = document.getElementById('auth-email-input').value.trim();
+  const pass = document.getElementById('auth-password-input').value;
+  firebase.auth().signInWithEmailAndPassword(email, pass)
+    .then(() => closeAuthModal())
+    .catch(e => { document.getElementById('auth-error').textContent = translateAuthError(e); });
+}
+
+function firebaseSignOut() {
+  if (!cloudEnabled) return;
+  firebase.auth().signOut();
+}
+
+function showSyncStatus(text, isError) {
+  const el = document.getElementById('sync-status');
+  el.textContent = text;
+  el.style.color = isError ? 'var(--red)' : 'var(--green)';
+  el.style.display = 'block';
+}
+
+async function loadFromCloud() {
+  if (!cloudUser) return;
+  showSyncStatus('☁️ クラウドからデータを読み込み中...');
+  try {
+    const doc = await db.collection('users').doc(cloudUser.uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      const cloudStats = data.questionStats || {};
+      for (const id of Object.keys(cloudStats)) {
+        const local = questionStats[id];
+        const cloud = cloudStats[id];
+        if (!local || (cloud.attempts || 0) >= (local.attempts || 0)) {
+          questionStats[id] = cloud;
+        }
+      }
+      saveQuestionStats(true);
+      if (data.wrongIds) {
+        const merged = new Set([...wrongIds, ...data.wrongIds]);
+        wrongIds = [...merged].filter(id => {
+          const s = questionStats[id];
+          return !s || !s.lastCorrect;
+        });
+        saveWrongIds(true);
+      }
+      if (data.lastResult) {
+        localStorage.setItem('toeic_last_result', JSON.stringify(data.lastResult));
+      }
+    }
+    loadState();
+    updatePreview();
+    showSyncStatus('☁️ クラウドと同期済み');
+  } catch (e) {
+    console.error(e);
+    showSyncStatus('同期エラー: ' + e.message, true);
+  }
+}
+
+function syncToCloud() {
+  if (!cloudEnabled || !cloudUser) return;
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    db.collection('users').doc(cloudUser.uid).set({
+      questionStats,
+      wrongIds,
+      lastResult: JSON.parse(localStorage.getItem('toeic_last_result') || 'null'),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).then(() => {
+      showSyncStatus('☁️ クラウドに保存しました');
+    }).catch(e => {
+      showSyncStatus('同期エラー: ' + e.message, true);
+    });
+  }, 1500);
+}
+
+if (cloudEnabled) {
+  firebase.auth().onAuthStateChanged(async user => {
+    cloudUser = user;
+    const loggedIn = document.getElementById('auth-logged-in');
+    const loggedOut = document.getElementById('auth-logged-out');
+    if (user) {
+      loggedIn.style.display = 'inline-flex';
+      loggedOut.style.display = 'none';
+      document.getElementById('auth-email').textContent = user.email;
+      await loadFromCloud();
+    } else {
+      loggedIn.style.display = 'none';
+      loggedOut.style.display = 'inline-flex';
+      document.getElementById('sync-status').style.display = 'none';
+    }
+  });
+}
 
 // ===== INIT =====
 initSelectors();
