@@ -142,35 +142,28 @@
   }
   #q-start:focus { outline: none; border-color: var(--blue); }
   #q-start:disabled { opacity: 0.35; cursor: not-allowed; background: var(--gray-light); }
-  .count-btns { display: flex; flex-wrap: wrap; gap: 8px; }
-  .count-btn {
-    padding: 7px 16px;
-    border-radius: 20px;
-    border: 1.5px solid var(--border);
-    background: white;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    font-family: inherit;
-    transition: all 0.15s;
-  }
-  .count-btn:hover { border-color: var(--blue); color: var(--blue); }
-  .count-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
 
-  .cat-btns { display: flex; flex-wrap: wrap; gap: 8px; }
-  .cat-btn {
-    padding: 7px 14px;
-    border-radius: 20px;
+  .select-input {
+    flex: 1;
+    width: 100%;
+    padding: 9px 10px;
     border: 1.5px solid var(--border);
-    background: white;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 500;
+    border-radius: 8px;
+    font-size: 0.92rem;
     font-family: inherit;
-    transition: all 0.15s;
+    color: var(--text);
+    background: white;
+    transition: border-color 0.15s;
   }
-  .cat-btn:hover { border-color: var(--blue); color: var(--blue); }
-  .cat-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+  .select-input:focus { outline: none; border-color: var(--blue); }
+  .range-preview {
+    margin-top: 14px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--gray-light);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
 
   .top-link-row {
     display: flex;
@@ -562,32 +555,39 @@
   </div>
 
   <div class="range-select">
-    <h3>カテゴリーで絞り込み</h3>
-    <div class="cat-btns" id="cat-btns">
-      <button class="cat-btn active" onclick="selectCategory(this,null)">全カテゴリー</button>
-    </div>
-  </div>
-
-  <div class="range-select">
-    <h3>問題範囲を設定</h3>
+    <h3>問題の選び方</h3>
     <div class="range-config">
       <div class="range-row">
-        <span class="range-label">開始問題</span>
-        <input type="number" id="q-start" min="1" max="1660" value="1" disabled>
-        <span class="range-sep">番から</span>
+        <span class="range-label">カテゴリー</span>
+        <select id="cat-select" class="select-input" onchange="onCategoryChange(this)"></select>
       </div>
       <div class="range-row">
         <span class="range-label">出題数</span>
-        <div class="count-btns">
-          <button class="count-btn" onclick="setCount(this,10)">10問</button>
-          <button class="count-btn" onclick="setCount(this,20)">20問</button>
-          <button class="count-btn" onclick="setCount(this,30)">30問</button>
-          <button class="count-btn" onclick="setCount(this,50)">50問</button>
-          <button class="count-btn" onclick="setCount(this,100)">100問</button>
-          <button class="count-btn active" onclick="setCount(this,0)">全問</button>
-        </div>
+        <select id="count-select" class="select-input" onchange="onCountChange(this)">
+          <option value="10">10問</option>
+          <option value="20">20問</option>
+          <option value="30">30問</option>
+          <option value="50">50問</option>
+          <option value="100">100問</option>
+          <option value="0" selected>全問</option>
+        </select>
+      </div>
+      <div class="range-row">
+        <span class="range-label">開始位置</span>
+        <select id="start-mode" class="select-input" onchange="onStartModeChange(this)">
+          <option value="continue" selected>続きから</option>
+          <option value="beginning">最初から</option>
+          <option value="random">ランダム</option>
+          <option value="custom">番号を指定</option>
+        </select>
+      </div>
+      <div class="range-row" id="custom-start-row" style="display:none;">
+        <span class="range-label">開始番号</span>
+        <input type="number" id="q-start" min="1" max="1660" value="1" onchange="updatePreview()">
+        <span class="range-sep">番から</span>
       </div>
     </div>
+    <p class="range-preview" id="range-preview"></p>
   </div>
 
   <button class="btn-start" onclick="startQuiz()">スタート</button>
@@ -2346,6 +2346,7 @@ function getCategory(q) {
 let mode = 'all';
 let rangeCount = 0; // 0 = 全問
 let selectedCategory = null; // null = 全カテゴリー
+let startMode = 'continue'; // continue | beginning | random | custom
 let activeQuestions = [];
 let currentIdx = 0;
 let answers = {};  // questionId -> { chosen, correct }
@@ -2387,44 +2388,84 @@ function selectMode(el, m) {
   mode = m;
 }
 
-function setCount(el, n) {
-  document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  rangeCount = n;
-  const startInput = document.getElementById('q-start');
-  if (startInput) startInput.disabled = (n === 0);
-}
-
-function selectCategory(el, cat) {
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  selectedCategory = cat;
-}
-
-function initCategoryButtons() {
+function initSelectors() {
   const counts = {};
   for (const q of QUESTIONS) {
     const c = getCategory(q);
     counts[c] = (counts[c] || 0) + 1;
   }
-  const container = document.getElementById('cat-btns');
+  const catSelect = document.getElementById('cat-select');
+  const allOpt = document.createElement('option');
+  allOpt.value = '';
+  allOpt.textContent = `全カテゴリー (${QUESTIONS.length}問)`;
+  catSelect.appendChild(allOpt);
   for (const cat of CATEGORIES) {
     if (!counts[cat]) continue;
-    const btn = document.createElement('button');
-    btn.className = 'cat-btn';
-    btn.textContent = `${cat} (${counts[cat]})`;
-    btn.onclick = () => selectCategory(btn, cat);
-    container.appendChild(btn);
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = `${cat} (${counts[cat]}問)`;
+    catSelect.appendChild(opt);
   }
+}
+
+function onCategoryChange(el) {
+  selectedCategory = el.value || null;
+  updatePreview();
+}
+
+function onCountChange(el) {
+  rangeCount = parseInt(el.value);
+  updatePreview();
+}
+
+function onStartModeChange(el) {
+  startMode = el.value;
+  document.getElementById('custom-start-row').style.display = (startMode === 'custom') ? 'flex' : 'none';
+  updatePreview();
+}
+
+// Find the index of the first question in pool that has never been answered
+function findContinueIndex(pool) {
+  const idx = pool.findIndex(q => !(questionStats[q.id] && questionStats[q.id].attempts > 0));
+  return idx < 0 ? 0 : idx;
 }
 
 function getActiveQuestions() {
   const pool = selectedCategory ? QUESTIONS.filter(q => getCategory(q) === selectedCategory) : QUESTIONS;
-  if (rangeCount === 0) return [...pool];
-  const startVal = parseInt(document.getElementById('q-start').value) || 1;
-  const idx = pool.findIndex(q => q.id >= startVal);
-  const from = (idx < 0) ? Math.max(0, pool.length - rangeCount) : idx;
-  return pool.slice(from, from + rangeCount);
+  const count = rangeCount === 0 ? pool.length : Math.min(rangeCount, pool.length);
+  let from = 0;
+  if (startMode === 'continue') {
+    from = findContinueIndex(pool);
+    if (from + count > pool.length) from = Math.max(0, pool.length - count);
+  } else if (startMode === 'random') {
+    from = (count >= pool.length) ? 0 : Math.floor(Math.random() * (pool.length - count + 1));
+  } else if (startMode === 'custom') {
+    const startVal = parseInt(document.getElementById('q-start').value) || 1;
+    const idx = pool.findIndex(q => q.id >= startVal);
+    from = (idx < 0) ? Math.max(0, pool.length - count) : idx;
+  }
+  // 'beginning' -> from stays 0
+  return pool.slice(from, from + count);
+}
+
+function updatePreview() {
+  const pool = selectedCategory ? QUESTIONS.filter(q => getCategory(q) === selectedCategory) : QUESTIONS;
+  const count = rangeCount === 0 ? pool.length : Math.min(rangeCount, pool.length);
+  const qs = getActiveQuestions();
+  const preview = document.getElementById('range-preview');
+  if (qs.length === 0) {
+    preview.textContent = '出題できる問題がありません。';
+    return;
+  }
+  const first = qs[0].id;
+  const last = qs[qs.length - 1].id;
+  const catLabel = selectedCategory ? selectedCategory : '全カテゴリー';
+  let modeNote = '';
+  if (startMode === 'continue') {
+    const remaining = pool.filter(q => !(questionStats[q.id] && questionStats[q.id].attempts > 0)).length;
+    modeNote = remaining === 0 ? '（すべて解答済み・最初から出題）' : `（未回答 ${remaining}問中から）`;
+  }
+  preview.textContent = `${catLabel}（全${pool.length}問）から ${qs.length}問 出題：問題${first}〜${last}番付近 ${modeNote}`;
 }
 
 function startQuiz() {
@@ -2709,6 +2750,7 @@ function goHome() {
   document.getElementById('timer').style.display = 'none';
   document.getElementById('progress-bar').style.width = '0%';
   loadState();
+  updatePreview();
 }
 
 // ===== DASHBOARD =====
@@ -2778,6 +2820,11 @@ function renderDashboard() {
 function startCategoryQuiz(cat) {
   selectedCategory = cat;
   rangeCount = 0;
+  startMode = 'continue';
+  document.getElementById('cat-select').value = cat;
+  document.getElementById('count-select').value = '0';
+  document.getElementById('start-mode').value = 'continue';
+  document.getElementById('custom-start-row').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'none';
   startQuiz();
 }
@@ -2799,8 +2846,9 @@ document.addEventListener('keydown', e => {
 });
 
 // ===== INIT =====
-initCategoryButtons();
+initSelectors();
 loadState();
+updatePreview();
 </script>
 </body>
 </html>
